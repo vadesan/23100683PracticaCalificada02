@@ -22,7 +22,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -31,6 +33,8 @@ import androidx.navigation.NavController
 fun GameScreen(viewModel: GameViewModel= viewModel()){
     var numeroCartas by remember { mutableStateOf("2") }
     var enabled by remember { mutableStateOf(true) }
+
+    val gameEnded = viewModel.playerSum >= 21
 
     LaunchedEffect(true) {
         viewModel.shuffleCards()
@@ -53,6 +57,33 @@ fun GameScreen(viewModel: GameViewModel= viewModel()){
             Text(text = viewModel.playerSum.toString(), style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(32.dp))
 
+            if (gameEnded) {
+                val resultText: String
+                val resultColor: Color
+
+                when {
+                    viewModel.playerSum > 21 -> {
+                        resultText = "¡Te pasaste! Has perdido."
+                        resultColor = Color.Red
+                    }
+                    viewModel.playerSum == 21 -> {
+                        resultText = "¡Blackjack! ¡Has ganado!"
+                        resultColor = Color(0xFF008000) // Verde oscuro
+                    }
+                    else -> { // Esta rama no se alcanzará si gameEnded es playerSum >= 21
+                        resultText = ""
+                        resultColor = Color.Unspecified
+                    }
+                }
+                Text(
+                    text = resultText,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = resultColor,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -67,7 +98,8 @@ fun GameScreen(viewModel: GameViewModel= viewModel()){
                     label = { Text("Cartas") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.width(90.dp),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = !gameEnded && !viewModel.isLoading
                 )
 
                 Spacer(modifier = Modifier.width(16.dp))
@@ -77,7 +109,7 @@ fun GameScreen(viewModel: GameViewModel= viewModel()){
                     if (count != null && count in 2..5) {
                         viewModel.drawCards(count)
                     }
-                    enabled = !viewModel.isLoading && numeroCartas.toIntOrNull() in 2..5
+                    enabled = !gameEnded && !viewModel.isLoading && numeroCartas.toIntOrNull() in 2..5
                 }) {
                     Text(text = "Robar Carta")
                 }
@@ -87,7 +119,6 @@ fun GameScreen(viewModel: GameViewModel= viewModel()){
                 Button(
                     onClick = {
                         viewModel.shuffleCards()
-                        // Opcional: reiniciar el campo de texto
                         numeroCartas = "2"
                     },
                     enabled = !viewModel.isLoading
