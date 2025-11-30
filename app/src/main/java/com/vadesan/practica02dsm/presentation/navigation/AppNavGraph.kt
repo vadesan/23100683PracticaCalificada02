@@ -22,7 +22,7 @@ fun AppNavGraph(){
         }
         composable(route = "game") {
             DrawerScaffold(navController) {
-                GameScreen(navController)
+                GameScreen()
             }
         }
     }
